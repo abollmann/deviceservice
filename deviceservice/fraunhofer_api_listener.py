@@ -6,7 +6,6 @@ import json
 from apscheduler.schedulers.background import BackgroundScheduler
 from requests.auth import HTTPBasicAuth
 
-from deviceservice import logger
 from deviceservice.model import Device
 from config import FRAUNHOFER_API_USER, FRAUNHOFER_API_PASSWORD
 
@@ -33,7 +32,6 @@ def update_devices():
                 else:
                     device_data.update(device_identifier)
                     Device(**device_data).save()
-    logger.warn('Updated device readings')
 
 
 scheduler = BackgroundScheduler()
