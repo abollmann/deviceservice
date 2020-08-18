@@ -1,3 +1,5 @@
+import atexit
+
 import requests
 import json
 
@@ -36,3 +38,5 @@ def update_devices():
 
 scheduler = BackgroundScheduler()
 scheduler.add_job(func=update_devices, trigger="interval", hours=1)
+scheduler.start()
+atexit.register(lambda: scheduler.shutdown())
