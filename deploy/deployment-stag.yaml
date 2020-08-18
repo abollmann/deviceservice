@@ -1,0 +1,67 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: deviceservice
+  namespace: stag
+spec:
+  selector:
+    app: deviceservice
+  ports:
+  - port: 5002
+    targetPort: 5002
+    name: deviceservice
+    protocol: TCP
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deviceservice
+  namespace: stag
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: deviceservice
+  template:
+    metadata:
+      labels:
+        app: deviceservice
+    spec:
+      imagePullSecrets:
+        - name: pipeline-docker-registry
+      nodeName: app-node-1
+      containers:
+        - name: deviceservice
+          image: ${CICD_IMAGE}:${CICD_EXECUTION_SEQUENCE}
+          env:
+            - name: KAFKA_HOST
+              value: kafka.kafka
+            - name: KAFKA_PORT
+              value: "9094"
+            - name: KAFKA_TOPIC
+              value: devices
+            - name: KAFKA_PREFIX
+              value: stag
+          envFrom:
+            - secretRef:
+                name: deviceservice-secrets
+                optional: false
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: deviceservice-ingress
+  namespace: stag
+spec:
+  rules:
+    - host: 116.203.242.235.xip.io
+      http:
+        paths:
+          - backend:
+              serviceName: deviceservice
+              servicePort: 5002
+            path: /api/devices
+  tls:
+    - hosts:
+        - 116.203.242.235.xip.io

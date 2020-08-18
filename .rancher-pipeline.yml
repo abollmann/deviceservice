@@ -1,0 +1,28 @@
+stages:
+- name: Test
+  steps:
+    - runScriptConfig:
+        image: python:3.7-buster
+        shellScript: |-
+          pip install -r requirements.txt
+#          pytest
+#          pycodestyle deviceservice
+- name: Publish
+  steps:
+  - publishImageConfig:
+      dockerfilePath: ./Dockerfile
+      buildContext: .
+      tag: awcloud/deviceservice:${CICD_EXECUTION_SEQUENCE}
+- name: Deploy
+  steps:
+  - applyYamlConfig:
+      path: ./deploy/deployment-dev.yaml
+  - applyYamlConfig:
+      path: ./deploy/deployment-stag.yaml
+  - applyYamlConfig:
+      path: ./deploy/deployment-prod.yaml
+    when:
+      branch: master
+      event: push
+timeout: 60
+notification: {}
