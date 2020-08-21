@@ -6,9 +6,9 @@ from kafka import KafkaConsumer
 from deviceservice import logger
 from deviceservice.producer import produce_data
 from deviceservice.shared.error_handlers import handle_kafka_errors
-from deviceservice.shared.exceptions import KafkaMessageException
 from deviceservice.model import Device
 from config import KAFKA_HOST, KAFKA_PORT, KAFKA_PREFIX
+from deviceservice.shared.util import parse_message
 
 
 class ApartmentCommandConsumer(Thread):
@@ -25,34 +25,30 @@ class ApartmentCommandConsumer(Thread):
             handle_message(message)
 
 
+def handle_get_all(data, message_id):
+    devices = [device.to_dict() for device in Device.objects.all()]
+    logger.warn(F'Found {len(devices)} entries')
+    return devices, 200
+
+
+def handle_get_by_id(data, message_id):
+    devices = [device.to_dict() for device in Device.objects.raw(data)]
+    if not data:
+        logger.warn(F'Not found: {data}')
+        return None, 404
+    else:
+        device = devices[0]
+        logger.warn(F'Found {data}')
+        return device, 200
+
+
+ALLOWED_MESSAGE_TYPES = ['GET_ALL', 'GET_BY_ID']
+METHOD_MAPPING = {'GET_ALL': handle_get_all,
+                  'GET_BY_ID': handle_get_by_id}
+
+
 @handle_kafka_errors
 def handle_message(message):
-    message = json.loads(message.value.decode('utf-8'))
-    message_id = message['id']
-    if not all(key in message for key in ['command_type', 'data']):
-        raise KafkaMessageException('JSON-Object with "id", "command_type" and "data" expected.', message_id)
-
-    command_type = message['command_type']
-    if not any(command == command_type for command in ['GET_ALL', 'GET_BY_FILTER']):
-        raise KafkaMessageException('command_type must be either "GET_ALL", "GET_BY_FILTER"',
-                                    message_id)
-
-    data = message['data']
-    status_code = 200
-
-    if command_type == 'GET_ALL':
-        data = [building.to_dict() for building in Device.objects.all()]
-        logger.warn(F'Found {len(data)} entries')
-
-    elif command_type == 'GET_BY_ID':
-        data = json.loads(data)
-        data = [device.to_dict() for device in Device.objects.raw(data)]
-        if not data:
-            status_code = 404
-        else:
-            data = data[0]
-        logger.warn(F'Found {data}')
-
-    message['data'] = data
-    message['status_code'] = status_code
-    produce_data(message)
+    data, command_type, message_id = parse_message(message, ALLOWED_MESSAGE_TYPES)
+    response_data, status_code = METHOD_MAPPING[command_type](data, message_id)
+    produce_data({'data': response_data, 'status_code': status_code, 'id': message_id})

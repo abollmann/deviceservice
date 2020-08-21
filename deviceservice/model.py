@@ -8,6 +8,7 @@ class Device(MongoModel):
     timestamp = fields.TimestampField(required=True)
     temperature = fields.FloatField(required=True)
     meter_value = fields.FloatField(required=True)
+    tenant = fields.ObjectIdField(required=False)
 
     def clean(self):
         if list(Device.objects.raw({'building_id': self.building_id, 'room_nr': self.room_nr})):

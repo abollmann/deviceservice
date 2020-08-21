@@ -18,7 +18,8 @@ logger.addHandler(LoggingHandler())
 # DATABASE CONFIG
 credentials = F'{MONGO_USER}:{MONGO_PASSWORD}@' if MONGO_USER and MONGO_PASSWORD else ''
 auth_source = '&authSource=admin' if credentials else ''
-mongo_uri = F'mongodb://{credentials}{MONGO_HOST}:{MONGO_PORT}/devopss2020db{MONGO_NAME}{auth_source}'
+mongo_uri = F'mongodb://{credentials}{MONGO_HOST}:{MONGO_PORT}/devopss2020db{auth_source}'
+print(mongo_uri)
 connect(mongo_uri)
 
 # UTIL CONFIG
