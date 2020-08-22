@@ -35,7 +35,7 @@ def handle_get_by_id(data, message_id):
     devices = [device.to_dict() for device in Device.objects.raw(data)]
     if not data:
         logger.warn(F'Not found: {data}')
-        return None, 404
+        return {}, 404
     else:
         device = devices[0]
         logger.warn(F'Found {data}')
