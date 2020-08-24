@@ -15,4 +15,4 @@ def parse_message(message, allowed_types):
                                     message_id)
     data = message['data']
     data = data if isinstance(data, dict) else json.loads(data)
-    return data, command_type, message_id
+    return data, command_type

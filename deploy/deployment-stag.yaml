@@ -55,7 +55,7 @@ metadata:
   namespace: stag
 spec:
   rules:
-    - host: 116.203.242.235.xip.io
+    - host: stag.116.203.242.235.xip.io
       http:
         paths:
           - backend:

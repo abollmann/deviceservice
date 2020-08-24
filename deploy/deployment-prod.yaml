@@ -55,7 +55,7 @@ metadata:
   namespace: prod
 spec:
   rules:
-    - host: 116.203.242.235.xip.io
+    - host: prod.116.203.242.235.xip.io
       http:
         paths:
           - backend:
