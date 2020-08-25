@@ -39,7 +39,7 @@ def handle_distribute(data):
     tenant_id = ObjectId(data['tenant_id'])
     for device_id in data['device_ids']:
         Device.objects.raw({'_id': ObjectId(device_id)}).update(
-            {'$set': {'tenant': tenant_id}})
+            {'$set': {'tenant': tenant_id, 'current_price': 0}})
         logger.warn(F'Updated {device_id}')
     return None, None
 

@@ -8,6 +8,7 @@ class Device(MongoModel):
     timestamp = fields.TimestampField(required=True)
     temperature = fields.FloatField(required=True)
     meter_value = fields.FloatField(required=True)
+    current_price = fields.FloatField(default=0)
     tenant = fields.ObjectIdField(required=False)
 
     def clean(self):
