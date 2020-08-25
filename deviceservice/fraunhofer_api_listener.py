@@ -27,13 +27,13 @@ def update_devices():
                 query = list(Device.objects.raw(device_identifier))
                 if list(query):
                     saved_device = list(query)[0]
-                    old_price = saved_device.price
+                    old_price = saved_device.current_price
                     old_meter_value = saved_device.meter_value
                     new_meter_value = device['meterValue']['value']
                     new_device_data = {'temperature': device['temperature']['value'],
                                        'meter_value': new_meter_value,
-                                       'price': old_price + (old_meter_value - new_meter_value) * MAGIC_NUMBER}
-                    Device.objects.raw(device_identifier).update(new_device_data)
+                                       'current_price': old_price + (new_meter_value - old_meter_value) * MAGIC_NUMBER}
+                    Device.objects.raw(device_identifier).update({'$set': new_device_data})
                 else:
                     device_data = {'timestamp': device['temperature']['timestamp'],
                                    'temperature': device['temperature']['value'],
