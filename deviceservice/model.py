@@ -9,7 +9,7 @@ class Device(MongoModel):
     temperature = fields.FloatField(required=True)
     meter_value = fields.FloatField(required=True)
     current_price = fields.FloatField(default=0)
-    tenant = fields.ObjectIdField(required=False)
+    tenant = fields.ObjectIdField(required=False, default=None)
 
     def clean(self):
         if list(Device.objects.raw({'building_id': self.building_id, 'room_nr': self.room_nr})):
@@ -17,5 +17,7 @@ class Device(MongoModel):
 
     def to_dict(self):
         as_dict = self.to_son().to_dict()
+        if not self.tenant:
+            as_dict['tenant'] = None
         del as_dict['_cls']
         return as_dict
