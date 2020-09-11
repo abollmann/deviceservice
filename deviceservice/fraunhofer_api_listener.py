@@ -11,7 +11,6 @@ from config import FRAUNHOFER_API_USER, FRAUNHOFER_API_PASSWORD
 
 BASE_URL = F'https://applik-d18.iee.fraunhofer.de:8443/flat/AB%s/measurements/'
 ACTIVE_DEVICES = 20
-MAGIC_NUMBER = 0.5
 
 
 def update_devices():
@@ -27,12 +26,12 @@ def update_devices():
                 query = list(Device.objects.raw(device_identifier))
                 if list(query):
                     saved_device = list(query)[0]
-                    old_price = saved_device.current_price
+                    meter_value_diff = saved_device.meter_value_diff
                     old_meter_value = saved_device.meter_value
                     new_meter_value = device['meterValue']['value']
                     new_device_data = {'temperature': device['temperature']['value'],
                                        'meter_value': new_meter_value,
-                                       'current_price': old_price + abs(new_meter_value - old_meter_value) * MAGIC_NUMBER}
+                                       'meter_value_diff': meter_value_diff + abs(new_meter_value - old_meter_value)}
                     Device.objects.raw(device_identifier).update({'$set': new_device_data})
                 else:
                     device_data = {'timestamp': device['temperature']['timestamp'],
