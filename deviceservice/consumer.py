@@ -50,9 +50,17 @@ def handle_remove(data):
     logger.warn(F'Removed {tenant_id} from devices')
 
 
+def handle_meter_value_reset(data):
+    tenant_id = ObjectId(data['tenant_id'])
+    Device.objects.raw({'tenant': tenant_id}).update(
+        {'$set': {'meter_value_diff': 0}})
+    logger.warn(F'Reset devices with tenant_id {tenant_id}')
+
+
 ALLOWED_MESSAGE_TYPES = ['REMOVE_DEVICES', 'DISTRIBUTE_DEVICES']
 METHOD_MAPPING = {'REMOVE_DEVICES': handle_remove,
-                  'DISTRIBUTE_DEVICES': handle_distribute}
+                  'DISTRIBUTE_DEVICES': handle_distribute,
+                  'RESET_METER_VALUE': handle_meter_value_reset}
 
 
 @handle_kafka_errors
