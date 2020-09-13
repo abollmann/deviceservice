@@ -57,7 +57,7 @@ def handle_meter_value_reset(data):
     logger.warn(F'Reset devices with tenant_id {tenant_id}')
 
 
-ALLOWED_MESSAGE_TYPES = ['REMOVE_DEVICES', 'DISTRIBUTE_DEVICES']
+ALLOWED_MESSAGE_TYPES = ['REMOVE_DEVICES', 'DISTRIBUTE_DEVICES', 'RESET_METER_VALUE']
 METHOD_MAPPING = {'REMOVE_DEVICES': handle_remove,
                   'DISTRIBUTE_DEVICES': handle_distribute,
                   'RESET_METER_VALUE': handle_meter_value_reset}
