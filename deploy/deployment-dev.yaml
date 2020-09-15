@@ -55,7 +55,7 @@ metadata:
   namespace: dev
 spec:
   rules:
-    - host: 116.203.242.235.xip.io
+    - host: dev.116.203.242.235.xip.io
       http:
         paths:
           - backend:

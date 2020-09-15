@@ -1,17 +1,16 @@
-import json
 from threading import Thread
 
+from bson import ObjectId
 from kafka import KafkaConsumer
 
 from deviceservice import logger
-from deviceservice.producer import produce_data
 from deviceservice.shared.error_handlers import handle_kafka_errors
-from deviceservice.shared.exceptions import KafkaMessageException
 from deviceservice.model import Device
 from config import KAFKA_HOST, KAFKA_PORT, KAFKA_PREFIX
+from deviceservice.shared.util import parse_message
 
 
-class ApartmentCommandConsumer(Thread):
+class DeviceConsumer(Thread):
     daemon = True
 
     def run(self):
@@ -25,34 +24,46 @@ class ApartmentCommandConsumer(Thread):
             handle_message(message)
 
 
+def handle_get_by_id(data):
+    devices = [device.to_dict() for device in Device.objects.raw(data)]
+    if not data:
+        logger.warn(F'Not found: {data}')
+        return {}, 404
+    else:
+        device = devices[0]
+        logger.warn(F'Found {data}')
+        return device, 200
+
+
+def handle_distribute(data):
+    tenant_id = ObjectId(data['tenant_id'])
+    for device_id in data['device_ids']:
+        Device.objects.raw({'_id': ObjectId(device_id)}).update(
+            {'$set': {'tenant': tenant_id}})
+        logger.warn(F'Updated {device_id}')
+
+
+def handle_remove(data):
+    tenant_id = ObjectId(data['tenant_id'])
+    Device.objects.raw({'tenant': tenant_id}).update(
+        {'$set': {'tenant': None}})
+    logger.warn(F'Removed {tenant_id} from devices')
+
+
+def handle_meter_value_reset(data):
+    tenant_id = ObjectId(data['tenant_id'])
+    Device.objects.raw({'tenant': tenant_id}).update(
+        {'$set': {'meter_value_diff': 0}})
+    logger.warn(F'Reset devices with tenant_id {tenant_id}')
+
+
+ALLOWED_MESSAGE_TYPES = ['REMOVE_DEVICES', 'DISTRIBUTE_DEVICES', 'RESET_METER_VALUE']
+METHOD_MAPPING = {'REMOVE_DEVICES': handle_remove,
+                  'DISTRIBUTE_DEVICES': handle_distribute,
+                  'RESET_METER_VALUE': handle_meter_value_reset}
+
+
 @handle_kafka_errors
 def handle_message(message):
-    message = json.loads(message.value.decode('utf-8'))
-    message_id = message['id']
-    if not all(key in message for key in ['command_type', 'data']):
-        raise KafkaMessageException('JSON-Object with "id", "command_type" and "data" expected.', message_id)
-
-    command_type = message['command_type']
-    if not any(command == command_type for command in ['GET_ALL', 'GET_BY_FILTER']):
-        raise KafkaMessageException('command_type must be either "GET_ALL", "GET_BY_FILTER"',
-                                    message_id)
-
-    data = message['data']
-    status_code = 200
-
-    if command_type == 'GET_ALL':
-        data = [building.to_dict() for building in Device.objects.all()]
-        logger.warn(F'Found {len(data)} entries')
-
-    elif command_type == 'GET_BY_ID':
-        data = json.loads(data)
-        data = [device.to_dict() for device in Device.objects.raw(data)]
-        if not data:
-            status_code = 404
-        else:
-            data = data[0]
-        logger.warn(F'Found {data}')
-
-    message['data'] = data
-    message['status_code'] = status_code
-    produce_data(message)
+    data, command_type = parse_message(message, ALLOWED_MESSAGE_TYPES)
+    METHOD_MAPPING[command_type](data)
