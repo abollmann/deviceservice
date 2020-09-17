@@ -31,6 +31,7 @@ def update_devices():
                     new_meter_value = device['meterValue']['value']
                     new_device_data = {'temperature': device['temperature']['value'],
                                        'meter_value': new_meter_value,
+                                       'timestamp': device['temperature']['timestamp'],
                                        'meter_value_diff': meter_value_diff + abs(new_meter_value - old_meter_value)}
                     Device.objects.raw(device_identifier).update({'$set': new_device_data})
                 else:
